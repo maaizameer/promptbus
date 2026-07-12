@@ -1,0 +1,41 @@
+{
+  "name": "@promptbus/promptbus",
+  "version": "0.1.1",
+  "license": "MIT",
+  "description": "Local proxy that routes Claude Code requests to the cheapest capable model",
+  "type": "module",
+  "bin": {
+    "promptbus": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "config/rules.yaml",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"fs.rmSync('dist/dashboard/public', {recursive: true, force: true}); fs.cpSync('src/dashboard/public', 'dist/dashboard/public', {recursive: true})\" && find dist -name \"*.test.*\" -delete",
+    "start": "node dist/index.js",
+    "cli": "node dist/cli/index.js",
+    "dev": "npx tsx src/index.ts",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build",
+    "postinstall": "echo 'PromptBus installed. Run \"promptbus start\" to begin.'"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "express": "^5.2.1",
+    "js-yaml": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.10"
+  }
+}
