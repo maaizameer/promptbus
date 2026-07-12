@@ -1,0 +1,86 @@
+version: 1
+enabled: true
+default_model: claude-sonnet-5
+routes:
+  # Cheapest capable model for each task type — tasks with never_downgrade
+  # always use whatever model Claude Code originally requested.
+  - when:
+      task_type: read_explain
+      min_confidence: 0.6
+    use:
+      model: claude-haiku-4-5
+      effort: low
+  - when:
+      task_type: small_edit
+    use:
+      model: claude-sonnet-5
+      effort: medium
+  - when:
+      task_type: multi_file_refactor
+    never_downgrade: true
+  - when:
+      task_type: planning
+    never_downgrade: true
+  - when:
+      task_type: debug_loop
+    never_downgrade: true
+  - when:
+      task_type: test_generation
+    use:
+      model: claude-sonnet-5
+      effort: medium
+  - when:
+      task_type: unknown
+    never_downgrade: true
+confidence_floor_for_any_downgrade: 0.6
+log_retention_days: 90
+log_request_bodies: false
+pricing:
+  claude-fable-5:
+    input_per_mtok: 10
+    output_per_mtok: 50
+  claude-mythos-5:
+    input_per_mtok: 8
+    output_per_mtok: 40
+  claude-mythos-preview:
+    input_per_mtok: 8
+    output_per_mtok: 40
+  claude-opus-4-8:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-7:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-6:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-5:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-5-20251101:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-1:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-opus-4-1-20250805:
+    input_per_mtok: 5
+    output_per_mtok: 25
+  claude-sonnet-5:
+    input_per_mtok: 3
+    output_per_mtok: 15
+  claude-sonnet-4-6:
+    input_per_mtok: 3
+    output_per_mtok: 15
+  claude-sonnet-4-5:
+    input_per_mtok: 3
+    output_per_mtok: 15
+  claude-sonnet-4-5-20250929:
+    input_per_mtok: 3
+    output_per_mtok: 15
+  claude-haiku-4-5:
+    input_per_mtok: 1
+    output_per_mtok: 5
+  claude-haiku-4-5-20251001:
+    input_per_mtok: 1
+    output_per_mtok: 5

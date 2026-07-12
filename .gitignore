@@ -1,0 +1,14 @@
+node_modules/
+dist/
+config/promptbus.db
+
+# Agent & dev tooling (exclude from public repo)
+build-plan/
+.opencode/
+.agents/
+AGENTS.md
+.cursor/
+.windsurf/
+.claude/
+.github/copilot-instructions.md
+CONTEXT.md

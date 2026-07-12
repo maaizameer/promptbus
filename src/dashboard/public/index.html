@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PromptBus</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🚌</text></svg>">
+<style>
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #ffffff;
+  --bg-subtle: #f9f9fb;
+  --bg-card: #ffffff;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
+  --text: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --accent: #6366f1;
+  --accent-light: #eef2ff;
+  --green: #059669;
+  --green-light: #ecfdf5;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.topbar-logo span {
+  color: var(--accent);
+}
+
+.topbar-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 0.8rem;
+}
+
+.topbar-meta .meta-item {
+  color: var(--text-secondary);
+}
+
+.topbar-meta .meta-value {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.toggle-group .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.toggle-group .dot.on { background: var(--green); }
+.toggle-group .dot.off { background: var(--red); }
+
+.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.switch .slider {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.switch .slider::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  bottom: 2px;
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.switch input:checked + .slider { background: var(--accent); }
+.switch input:checked + .slider::before { transform: translateX(16px); }
+
+.restart-notice {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* ── CONTENT ── */
+.content {
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 32px;
+  flex: 1;
+}
+
+/* ── STATS ROW ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.stat-card .stat-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.stat-card .stat-note {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* ── TABLE ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-header h2 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.section-header .count {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+}
+
+.table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  text-align: left;
+  padding: 10px 16px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+tbody td {
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+tbody tr:last-child td { border-bottom: none; }
+
+tbody tr:hover { background: var(--bg-subtle); }
+
+.col-time { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-secondary); width: 80px; }
+.col-task { width: 120px; }
+.col-from { width: 140px; }
+.col-to { width: 140px; }
+.col-effort { width: 60px; color: var(--text-secondary); font-size: 0.8rem; }
+.col-action { width: 90px; }
+.col-cost { width: 90px; text-align: right; font-family: var(--font-mono); font-size: 0.78rem; }
+.col-link { width: 30px; }
+
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.badge-read_explain { background: var(--blue-light); color: var(--blue); }
+.badge-small_edit { background: var(--green-light); color: var(--green); }
+.badge-multi_file_refactor { background: #f3e8ff; color: #9333ea; }
+.badge-planning { background: var(--amber-light); color: var(--amber); }
+.badge-debug_loop { background: var(--red-light); color: var(--red); }
+.badge-test_generation { background: #ecfeff; color: #0891b2; }
+.badge-unknown { background: var(--bg-subtle); color: var(--text-tertiary); }
+
+.model-name {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.model-name.orig { color: var(--text); }
+.model-name.routed { color: var(--accent); font-weight: 500; }
+.model-name.same { color: var(--text-tertiary); }
+
+.action-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.action-tag.downgraded { color: var(--green); }
+.action-tag.pass-through { color: var(--text-tertiary); }
+
+.link-btn {
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.link-btn:hover { color: var(--accent); background: var(--accent-light); }
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-tertiary);
+  font-size: 0.85rem;
+}
+
+.empty-state .icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+
+/* ── RULES ── */
+.rules-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.rules-card h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.rule-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding: 8px 0;
+}
+
+.rule-row + .rule-row { border-top: 1px solid var(--border-light); }
+
+.rule-row select,
+.rule-row input[type="text"] {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.rule-row select:focus,
+.rule-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.rule-row label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.rule-row label input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.btn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: 0.15s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover { background: #4f46e5; }
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { border-color: var(--text-tertiary); color: var(--text); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-overlay.active { display: flex; align-items: center; justify-content: center; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: 12px;
+  width: 480px;
+  max-width: 92vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.modal-close:hover { color: var(--text); }
+
+.modal-body { padding: 20px; }
+
+.detail-row {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 0.85rem;
+}
+
+.detail-row:last-child { border-bottom: none; }
+
+.detail-label {
+  width: 100px;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.detail-value {
+  flex: 1;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.detail-value.mono { font-family: var(--font-mono); font-size: 0.8rem; }
+
+/* ── TOAST ── */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  font-size: 0.8rem;
+  padding: 10px 16px;
+  background: var(--text);
+  color: white;
+  border-radius: 8px;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: 0.25s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.error { background: var(--red); }
+.toast.success { background: var(--green); }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .topbar { padding: 12px 16px; }
+  .content { padding: 16px; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .stat-card { padding: 14px; }
+  .stat-card .stat-number { font-size: 1.4rem; }
+  thead th, tbody td { padding: 8px 10px; font-size: 0.78rem; }
+  .col-from, .col-to { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo"><span>Prompt</span>Bus</div>
+    <div class="topbar-meta">
+      <span class="meta-item">Port <span class="meta-value" id="meta-port">4701</span></span>
+      <span class="meta-item">Default <span class="meta-value" id="meta-model">sonnet-5</span></span>
+      <span class="meta-item">Floor <span class="meta-value" id="meta-floor">60%</span></span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="toggle-group">
+      <span class="dot on" id="status-dot"></span>
+      <span id="toggle-label">Active</span>
+      <label class="switch"><input type="checkbox" id="toggle-enabled" onchange="toggleEnabled(this.checked)"><span class="slider"></span></label>
+    </div>
+    <span class="restart-notice">Restart Claude Code after changes</span>
+  </div>
+</header>
+
+<div class="content">
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Requests</div>
+      <div class="stat-number" id="stat-total">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Downgraded</div>
+      <div class="stat-number" id="stat-downgraded">--</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reroute Rate</div>
+      <div class="stat-number" id="stat-rate">--</div>
+      <div class="stat-note">requests downgraded to cheaper model</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Routes</div>
+      <div class="stat-number" id="stat-routes">--</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Requests</h2>
+    <span class="count" id="board-count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-time">Time</th>
+          <th class="col-task">Type</th>
+          <th class="col-from">Requested</th>
+          <th class="col-to">Routed To</th>
+          <th class="col-effort">Effort</th>
+          <th class="col-action">Action</th>
+          <th class="col-latency">Latency</th>
+          <th class="col-link"></th>
+        </tr>
+      </thead>
+      <tbody id="board-body">
+        <tr><td colspan="8"><div class="empty-state"><span class="icon">⌨️</span>Waiting for requests…</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="rules-card">
+    <h3>Routing Rules</h3>
+    <div id="rules-editor"></div>
+    <div style="margin-top: 12px;">
+      <button class="btn btn-primary" onclick="saveRules()">Save Rules</button>
+    </div>
+  </div>
+
+  <div class="rules-card">
+    <h3>Advanced Settings</h3>
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; max-width: 500px;">
+        <label style="width: 200px; font-size: 0.85rem; color: var(--text-secondary);">Confidence Floor (%):</label>
+        <input type="range" id="adv-floor" min="0" max="100" value="60" oninput="document.getElementById('adv-floor-val').textContent = this.value + '%'" style="flex: 1; accent-color: var(--accent);">
+        <span id="adv-floor-val" style="width: 45px; font-size: 0.85rem; font-family: var(--font-mono); text-align: right;">60%</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; max-width: 500px;">
+        <label style="width: 200px; font-size: 0.85rem; color: var(--text-secondary);">Log Retention (Days):</label>
+        <input type="number" id="adv-retention" min="1" max="365" value="90" style="width: 80px; font-family: var(--font-sans); font-size: 0.8rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text);">
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; max-width: 500px;">
+        <label style="width: 200px; font-size: 0.85rem; color: var(--text-secondary);">Log Request Bodies:</label>
+        <label class="switch"><input type="checkbox" id="adv-log-bodies"><span class="slider"></span></label>
+        <span style="font-size: 0.75rem; color: var(--text-tertiary);">Warning: Code/prompts may contain sensitive data.</span>
+      </div>
+      <div style="margin-top: 8px;">
+        <button class="btn btn-primary" onclick="saveAdvancedSettings()">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules-card">
+    <h3>Export Logs</h3>
+    <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-top: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 0.85rem; color: var(--text-secondary);">Start Date</label>
+        <input type="date" id="export-start" style="font-family: var(--font-sans); font-size: 0.8rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text);">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 0.85rem; color: var(--text-secondary);">End Date</label>
+        <input type="date" id="export-end" style="font-family: var(--font-sans); font-size: 0.8rem; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text);">
+      </div>
+      <div>
+        <button class="btn btn-primary" onclick="exportLogsCsv()">Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Request Details</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-row"><span class="detail-label">Time</span><span class="detail-value" id="d-time"></span></div>
+      <div class="detail-row"><span class="detail-label">Task</span><span class="detail-value" id="d-task"></span></div>
+      <div class="detail-row"><span class="detail-label">From</span><span class="detail-value mono" id="d-from"></span></div>
+      <div class="detail-row"><span class="detail-label">To</span><span class="detail-value mono" id="d-to"></span></div>
+      <div class="detail-row"><span class="detail-label">Effort</span><span class="detail-value" id="d-effort"></span></div>
+      <div class="detail-row"><span class="detail-label">Action</span><span class="detail-value" id="d-action"></span></div>
+      <div class="detail-row"><span class="detail-label">Tokens</span><span class="detail-value mono" id="d-tokens"></span></div>
+      <div class="detail-row"><span class="detail-label">Latency</span><span class="detail-value mono" id="d-latency"></span></div>
+      <div class="detail-row"><span class="detail-label">API Cost Δ*</span><span class="detail-value mono" id="d-cost"></span></div>
+      <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value mono" id="d-upstream"></span></div>
+      <div class="detail-row"><span class="detail-label">Why</span><span class="detail-value mono" id="d-reason"></span></div>
+      <div class="detail-row" id="d-body-row" style="display:none; flex-direction:column; gap:4px; border-bottom:none;"><span class="detail-label">Request Body</span><pre style="background:var(--bg-subtle); padding:8px; border-radius:6px; font-family:var(--font-mono); font-size:0.75rem; overflow-x:auto; max-height:150px; width:100%; white-space:pre-wrap; word-break:break-all; border: 1px solid var(--border);" id="d-body"></pre></div>
+      <div style="margin-top:12px;font-size:0.75rem;color:var(--text-tertiary);border-top:1px solid var(--border-light);padding-top:12px">API cost difference shown for reference — not applicable to subscription plans.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+var TASK_TYPES = ['read_explain','small_edit','multi_file_refactor','planning','debug_loop','test_generation','unknown'];
+var EFFORT_OPS = ['low','medium','high'];
+var rulesData = null;
+
+function q(s, p) { return (p || document).querySelector(s); }
+function qa(s, p) { return Array.from((p || document).querySelectorAll(s)); }
+
+function fetchJSON(url, opts) {
+  return fetch(url, opts).then(function(r) { if (!r.ok) throw new Error(r.statusText); return r.json(); });
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function shortModel(m) {
+  if (!m) return '-';
+  return m.replace(/^claude-/, '').replace(/-\d{8}/g, '');
+}
+
+function showToast(msg, type) {
+  var c = document.getElementById('toast-container');
+  var t = document.createElement('div');
+  t.className = 'toast' + (type === 'error' ? ' error' : '') + (type === 'success' ? ' success' : '');
+  t.textContent = msg;
+  c.appendChild(t);
+  requestAnimationFrame(function() { t.classList.add('show'); });
+  setTimeout(function() { t.classList.remove('show'); setTimeout(function() { c.removeChild(t); }, 250); }, 3000);
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').classList.remove('active');
+}
+
+async function loadDashboard() {
+  try {
+    var [summary, logs, rules, status] = await Promise.all([
+      fetchJSON('/api/summary'),
+      fetchJSON('/api/logs'),
+      fetchJSON('/api/rules'),
+      fetchJSON('/api/status'),
+    ]);
+  } catch (e) {
+    return;
+  }
+
+  document.getElementById('meta-port').textContent = status.port;
+  document.getElementById('meta-model').textContent = shortModel(status.default_model);
+  document.getElementById('meta-floor').textContent = Math.round(status.confidence_floor * 100) + '%';
+
+  document.getElementById('toggle-enabled').checked = status.enabled;
+  document.getElementById('toggle-label').textContent = status.enabled ? 'Active' : 'Bypassed';
+  document.getElementById('status-dot').className = 'dot ' + (status.enabled ? 'on' : 'off');
+
+  document.getElementById('stat-total').textContent = summary.total;
+  document.getElementById('stat-downgraded').textContent = summary.downgraded;
+  var rate = summary.total > 0 ? Math.round(summary.downgraded / summary.total * 100) : 0;
+  document.getElementById('stat-rate').textContent = rate + '%';
+  document.getElementById('stat-routes').textContent = (rules.routes || []).length;
+
+  document.getElementById('board-count').textContent = logs.length + ' requests';
+
+  var tbody = document.getElementById('board-body');
+  if (logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><span class="icon">⌨️</span>Waiting for requests…</div></td></tr>';
+  } else {
+    tbody.innerHTML = logs.map(function(l) {
+      var tc = l.task_type || 'unknown';
+      var down = l.downgraded;
+      var lat = l.latency_ms ? l.latency_ms + 'ms' : '—';
+      var time = l.timestamp ? new Date(l.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '—';
+      return '<tr>' +
+        '<td class="col-time">' + time + '</td>' +
+        '<td class="col-task"><span class="badge badge-' + tc + '">' + esc(tc.replace(/_/g, ' ')) + '</span></td>' +
+        '<td class="col-from"><span class="model-name orig">' + esc(shortModel(l.model_requested)) + '</span></td>' +
+        '<td class="col-to"><span class="model-name ' + (down ? 'routed' : 'same') + '">' + esc(shortModel(l.model_used)) + '</span></td>' +
+        '<td class="col-effort">' + (l.effort ? l.effort.charAt(0).toUpperCase() + l.effort.slice(1) : '—') + '</td>' +
+        '<td class="col-action"><span class="action-tag ' + (down ? 'downgraded' : 'pass-through') + '">' + (down ? '↓ Rerouted' : '→ Passthrough') + '</span></td>' +
+        '<td class="col-cost">' + lat + '</td>' +
+        '<td class="col-link"><a href="#" class="link-btn" onclick="showDetail(' + l.id + ');return false">↗</a></td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  renderRules(rules);
+
+  if (!document.activeElement || (document.activeElement.id !== 'adv-floor' && document.activeElement.id !== 'adv-retention')) {
+    document.getElementById('adv-floor').value = Math.round(status.confidence_floor * 100);
+    document.getElementById('adv-floor-val').textContent = Math.round(status.confidence_floor * 100) + '%';
+    document.getElementById('adv-retention').value = status.log_retention_days;
+    document.getElementById('adv-log-bodies').checked = status.log_request_bodies;
+  }
+}
+
+async function showDetail(id) {
+  try {
+    var log = await fetchJSON('/api/log/' + id);
+  } catch (e) {
+    showToast('Failed to load details', 'error');
+    return;
+  }
+  document.getElementById('d-time').textContent = log.timestamp ? new Date(log.timestamp).toLocaleString() : '—';
+  document.getElementById('d-task').textContent = log.task_type ? log.task_type.replace(/_/g, ' ') : '—';
+  document.getElementById('d-from').textContent = log.model_requested || '—';
+  document.getElementById('d-to').textContent = log.model_used || '—';
+  document.getElementById('d-effort').textContent = log.effort ? log.effort.charAt(0).toUpperCase() + log.effort.slice(1) : 'Default';
+  document.getElementById('d-action').textContent = log.downgraded ? 'Downgraded' : 'Passthrough';
+  document.getElementById('d-tokens').textContent = log.estimated_input_tokens ? log.estimated_input_tokens + ' est.' : '—';
+  document.getElementById('d-cost').textContent = log.estimated_cost_saved && Number(log.estimated_cost_saved) > 0 ? '-$' + Number(log.estimated_cost_saved).toFixed(4) : '$0';
+  document.getElementById('d-latency').textContent = log.latency_ms ? log.latency_ms + 'ms' : '—';
+  document.getElementById('d-upstream').textContent = log.upstream_status || '—';
+  document.getElementById('d-reason').textContent = log.reason || '—';
+
+  var bodyRow = document.getElementById('d-body-row');
+  if (log.request_body) {
+    try {
+      var parsedBody = JSON.parse(log.request_body);
+      document.getElementById('d-body').textContent = JSON.stringify(parsedBody, null, 2);
+    } catch (e) {
+      document.getElementById('d-body').textContent = log.request_body;
+    }
+    bodyRow.style.display = 'flex';
+  } else {
+    bodyRow.style.display = 'none';
+  }
+
+  document.getElementById('detail-modal').classList.add('active');
+}
+
+function renderRules(rules) {
+  rulesData = rules;
+  var el = document.getElementById('rules-editor');
+  el.innerHTML = rules.routes.map(function(r, i) {
+    var modelVal = r.use ? (r.use.model || '') : '';
+    var effortVal = r.use ? (r.use.effort || '') : '';
+    return '<div class="rule-row">' +
+      '<select onchange="updateRule(' + i + ')">' +
+        TASK_TYPES.map(function(t) { return '<option' + (t === r.when.task_type ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
+      '</select>' +
+      '<input type="text" placeholder="Model ID" value="' + esc(modelVal) + '" style="width:160px" onchange="updateRule(' + i + ')">' +
+      '<select onchange="updateRule(' + i + ')">' +
+        '<option value="">Effort</option>' +
+        EFFORT_OPS.map(function(e) { return '<option value="' + e + '"' + (effortVal === e ? ' selected' : '') + '>' + e.charAt(0).toUpperCase() + e.slice(1) + '</option>'; }).join('') +
+      '</select>' +
+      '<label><input type="checkbox"' + (r.never_downgrade ? ' checked' : '') + ' onchange="updateRule(' + i + ')"> Never downgrade</label>' +
+      '</div>';
+  }).join('');
+}
+
+function updateRule(idx) {
+  var rows = qa('.rule-row');
+  var row = rows[idx];
+  var selects = row.querySelectorAll('select');
+  var inputs = row.querySelectorAll('input[type="text"], input[type="checkbox"]');
+  var rule = rulesData.routes[idx];
+  rule.when.task_type = selects[0].value;
+  rule.never_downgrade = inputs[1].checked || undefined;
+  if (!rule.never_downgrade && inputs[0].value) {
+    rule.use = { model: inputs[0].value };
+    if (selects[1].value) rule.use.effort = selects[1].value;
+  } else {
+    rule.use = undefined;
+  }
+}
+
+async function saveRules() {
+  if (!rulesData) return;
+  try {
+    await fetchJSON('/api/rules', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rulesData),
+    });
+    showToast('Saved. Restart Claude Code to apply.', 'success');
+  } catch (e) {
+    showToast('Save failed: ' + e.message, 'error');
+  }
+}
+
+async function toggleEnabled(enabled) {
+  try {
+    await fetchJSON('/api/config', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: enabled }),
+    });
+    document.getElementById('toggle-label').textContent = enabled ? 'Active' : 'Bypassed';
+    document.getElementById('status-dot').className = 'dot ' + (enabled ? 'on' : 'off');
+  } catch (e) {
+    document.getElementById('toggle-enabled').checked = !enabled;
+  }
+}
+
+async function saveAdvancedSettings() {
+  if (!rulesData) return;
+  var floorPct = parseInt(document.getElementById('adv-floor').value, 10);
+  var retentionDays = parseInt(document.getElementById('adv-retention').value, 10);
+  var logBodies = document.getElementById('adv-log-bodies').checked;
+
+  if (isNaN(floorPct) || floorPct < 0 || floorPct > 100) {
+    showToast('Confidence floor must be 0–100.', 'error');
+    return;
+  }
+  if (isNaN(retentionDays) || retentionDays < 1) {
+    showToast('Log retention must be at least 1 day.', 'error');
+    return;
+  }
+
+  var payload = Object.assign({}, rulesData, {
+    confidence_floor_for_any_downgrade: floorPct / 100,
+    log_retention_days: retentionDays,
+    log_request_bodies: logBodies,
+  });
+
+  try {
+    await fetchJSON('/api/rules', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    rulesData = payload;
+    showToast('Advanced settings saved. Restart Claude Code to apply.', 'success');
+  } catch (e) {
+    showToast('Save failed: ' + e.message, 'error');
+  }
+}
+
+function exportLogsCsv() {
+  var start = document.getElementById('export-start').value;
+  var end = document.getElementById('export-end').value;
+  var url = '/api/logs/export';
+  var params = [];
+  if (start) params.push('start=' + encodeURIComponent(start + 'T00:00:00.000Z'));
+  if (end) params.push('end=' + encodeURIComponent(end + 'T23:59:59.999Z'));
+  if (params.length) url += '?' + params.join('&');
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'promptbus-logs.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+loadDashboard();
+let pollTimer = setInterval(loadDashboard, 8000);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    clearInterval(pollTimer);
+  } else {
+    loadDashboard();
+    pollTimer = setInterval(loadDashboard, 8000);
+  }
+});
+</script>
+
+</body>
+</html>
