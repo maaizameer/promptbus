@@ -253,19 +253,47 @@ export function getLogById(id: number): LogRow | null {
   }
 }
 
-export function getSummary(): { total: number; downgraded: number; costSaved: number } {
-  if (!openDb()) return { total: 0, downgraded: 0, costSaved: 0 };
+export function getSummary(): {
+  total: number;
+  downgraded: number;
+  costSaved: number;
+  totalOriginalCost: number;
+  totalActualCost: number;
+} {
+  if (!openDb()) return { total: 0, downgraded: 0, costSaved: 0, totalOriginalCost: 0, totalActualCost: 0 };
   try {
     const row = db!.prepare(`
       SELECT
         COUNT(*) as total,
         COALESCE(SUM(downgraded), 0) as downgraded,
-        COALESCE(SUM(estimated_cost_saved), 0) as cost_saved
-      FROM requests
-    `).get() as { total: number; downgraded: number; cost_saved: number };
-    return { total: row.total, downgraded: row.downgraded, costSaved: row.cost_saved };
+        COALESCE(SUM(estimated_cost_saved), 0) as cost_saved,
+        COALESCE(SUM(
+          (estimated_input_tokens / 1000000.0) * orig_p.input_per_mtok +
+          (COALESCE(estimated_output_tokens, 0) / 1000000.0) * orig_p.output_per_mtok
+        ), 0) as original_cost,
+        COALESCE(SUM(
+          (estimated_input_tokens / 1000000.0) * route_p.input_per_mtok +
+          (COALESCE(estimated_output_tokens, 0) / 1000000.0) * route_p.output_per_mtok
+        ), 0) as actual_cost
+      FROM requests r
+      LEFT JOIN pricing orig_p ON r.model_requested = orig_p.model
+      LEFT JOIN pricing route_p ON r.model_used = route_p.model
+    `).get() as {
+      total: number;
+      downgraded: number;
+      cost_saved: number;
+      original_cost: number;
+      actual_cost: number;
+    };
+    return {
+      total: row.total,
+      downgraded: row.downgraded,
+      costSaved: row.cost_saved,
+      totalOriginalCost: row.original_cost,
+      totalActualCost: row.actual_cost,
+    };
   } catch {
-    return { total: 0, downgraded: 0, costSaved: 0 };
+    return { total: 0, downgraded: 0, costSaved: 0, totalOriginalCost: 0, totalActualCost: 0 };
   }
 }
 

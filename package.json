@@ -16,7 +16,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "tsc && node -e \"fs.rmSync('dist/dashboard/public', {recursive: true, force: true}); fs.cpSync('src/dashboard/public', 'dist/dashboard/public', {recursive: true})\" && find dist -name \"*.test.*\" -delete",
+    "build": "tsc && node -e \"fs.rmSync('dist/dashboard/public', {recursive: true, force: true}); fs.cpSync('src/dashboard/public', 'dist/dashboard/public', {recursive: true})\" && find dist -name \"*.test.*\" -delete && chmod +x dist/cli/index.js",
     "start": "node dist/index.js",
     "cli": "node dist/cli/index.js",
     "dev": "npx tsx src/index.ts",

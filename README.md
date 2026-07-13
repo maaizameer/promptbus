@@ -24,7 +24,11 @@ This sets `ANTHROPIC_BASE_URL` in Claude Code's `settings.json` to point at the 
 ## Usage
 
 ```bash
-# Start the proxy and dashboard
+# Configure Claude Code to route through PromptBus
+promptbus install
+promptbus install --project   # apply to current project only
+
+# Start the proxy and dashboard (background daemon)
 promptbus start
 
 # View recent request logs
@@ -35,10 +39,26 @@ promptbus status
 
 # Stop
 promptbus stop
+
+# Restart
+promptbus restart
+
+# Revert configuration
+promptbus uninstall
 ```
 
 The **proxy** listens on `http://127.0.0.1:4701`.  
 The **dashboard** is at `http://127.0.0.1:4702`.
+
+### Dashboard
+
+The dashboard provides real-time visibility into your proxy usage:
+
+- **Stats cards** — Total/downgraded request counts, reroute rate, number of active routes
+- **Cost tracking** — Cost saved, original cost (what you would have paid), and actual cost, calculated per-request using the pricing table in `config/rules.yaml`
+- **Request log** — List of recent requests with task type, model routing, effort, latency
+- **Detail modal** — Click any request to see full details including tokens, cost delta, and request body
+- **Dark/light mode** — Toggle via the sun/moon button in the topbar; follows your system preference and persists
 
 ## Configuration
 

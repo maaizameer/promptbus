@@ -381,7 +381,8 @@ function printUsage(): void {
 async function main() {
   const cmd = process.argv[2];
   if (cmd === "--version" || cmd === "-v" || cmd === "version") {
-    console.log("promptbus v0.1.0");
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../../package.json"), "utf-8")) as { version: string };
+    console.log(`promptbus v${pkg.version}`);
     return;
   }
   if (cmd === "--help" || cmd === "-h" || cmd === "help" || !cmd) {

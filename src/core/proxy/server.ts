@@ -18,13 +18,22 @@ function getPricing(): Record<string, PricingEntry> {
   }
 }
 
-function calcCostSaved(originalModel: string, routedModel: string, inputTokens: number): number {
+function calcCostSaved(
+  originalModel: string,
+  routedModel: string,
+  inputTokens: number,
+  outputTokens: number,
+): number {
   const pricing = getPricing();
   const origPrice = pricing[originalModel];
   const routePrice = pricing[routedModel];
   if (!origPrice || !routePrice) return 0;
-  const origCost = (inputTokens / 1_000_000) * origPrice.input_per_mtok;
-  const routeCost = (inputTokens / 1_000_000) * routePrice.input_per_mtok;
+  const origCost =
+    (inputTokens / 1_000_000) * origPrice.input_per_mtok +
+    (outputTokens / 1_000_000) * origPrice.output_per_mtok;
+  const routeCost =
+    (inputTokens / 1_000_000) * routePrice.input_per_mtok +
+    (outputTokens / 1_000_000) * routePrice.output_per_mtok;
   return Math.max(0, origCost - routeCost);
 }
 
@@ -51,7 +60,7 @@ export function createProxyHandler() {
     const modelUsed = decision?.model ?? model;
     const downgraded = decision?.downgraded ?? false;
     const tokens = parsed?.estimatedTokens ?? 0;
-    const costSaved = downgraded ? calcCostSaved(model, modelUsed, tokens) : 0;
+    const costSaved = downgraded ? calcCostSaved(model, modelUsed, tokens, outputTokens ?? 0) : 0;
     const isStream = parsed?.stream ?? false;
     const reason = decision?.reason ?? "";
 
