@@ -1,11 +1,11 @@
 {
   "name": "@promptbus/promptbus",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "description": "Local proxy that routes Claude Code requests to the cheapest capable model",
   "type": "module",
   "bin": {
-    "promptbus": "./dist/cli/index.js"
+    "promptbus": "dist/cli/index.js"
   },
   "files": [
     "dist",
